@@ -1,0 +1,10 @@
+venv/
+frontend/node_modules/
+backend/.env
+backend/app/database/chroma_db/
+backend/app/uploads/
+__pycache__/
+*.pyc
+.DS_Store
+.vscode/
+frontend/dist/
