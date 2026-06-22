@@ -12,9 +12,19 @@ client = Groq(
 def generate_answer(question, context):
 
     prompt = f"""
-You are a helpful Company Knowledge Assistant.
+You are an AI assistant.
 
-Answer ONLY from the provided context.
+Answer ONLY using the information provided in the context.
+
+If the answer is not present in the context, respond with:
+
+"I could not find this information in the uploaded document."
+
+Do not make assumptions.
+
+Do not invent information.
+
+Do not use external knowledge.
 
 Context:
 {context}

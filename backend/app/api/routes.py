@@ -2,6 +2,11 @@ from backend.app.services.insights import extract_insights
 from backend.app.services.quiz_generator import generate_quiz
 from backend.app.services.summarizer import summarize_document
 from pydantic import BaseModel
+
+
+class QuestionRequest(BaseModel):
+
+    question: str
 from backend.app.rag.ingest import ingest_document
 from backend.app.rag.retriever import retrieve_documents
 from backend.app.rag.qa_chain import generate_answer
@@ -41,7 +46,7 @@ async def upload_document(file: UploadFile = File(...)):
 
 # Add the chat endpoint BELOW the upload endpoint
 @router.post("/chat")
-async def chat(request: ChatRequest):
+async def chat(request: QuestionRequest):
 
     docs = retrieve_documents(request.question)
 
@@ -54,9 +59,21 @@ async def chat(request: ChatRequest):
         context
     )
 
+    sources = []
+
+    for i, doc in enumerate(docs):
+        source = doc.metadata.get(
+            "source",
+            "Unknown Document"
+        )
+
+        sources.append(
+            f"{source} (Chunk {i + 1})"
+        )
+
     return {
-        "question": request.question,
-        "answer": answer
+        "answer": answer,
+        "sources": sources
     }
 
 @router.get("/summarize")

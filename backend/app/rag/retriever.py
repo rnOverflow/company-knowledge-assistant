@@ -13,6 +13,6 @@ vectorstore = Chroma(
 )
 
 
-def retrieve_documents(query: str, k: int = 3):
+def retrieve_documents(query: str, k: int = 10):
     docs = vectorstore.similarity_search(query, k=k)
     return docs
