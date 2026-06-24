@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import jsPDF from "jspdf";
 
 function App() {
   const [file, setFile] = useState(null);
@@ -8,6 +9,10 @@ function App() {
   const [answer, setAnswer] = useState("");
   const [sources, setSources] = useState([]);
   const [chatHistory, setChatHistory] = useState([]);
+  const [loadingAnswer, setLoadingAnswer] = useState(false);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [loadingQuiz, setLoadingQuiz] = useState(false);
+  const [loadingInsights, setLoadingInsights] = useState(false);
 
   const [summary, setSummary] = useState("");
   const [quiz, setQuiz] = useState("");
@@ -113,6 +118,30 @@ function App() {
     }
   };
 
+  const downloadSummary = () => {
+
+  if (!summary) {
+    alert("Generate a summary first!");
+    return;
+  }
+
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.text("Company Knowledge Assistant", 20, 20);
+
+  doc.setFontSize(14);
+  doc.text("Document Summary", 20, 35);
+
+  doc.setFontSize(11);
+
+  const splitText = doc.splitTextToSize(summary, 170);
+
+  doc.text(splitText, 20, 50);
+
+  doc.save("document-summary.pdf");
+};
+
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8">
       <div className="max-w-5xl mx-auto">
@@ -135,11 +164,11 @@ function App() {
             />
 
             <button
-              onClick={uploadFile}
-              className="bg-blue-600 px-6 py-2 rounded hover:bg-blue-700"
-            >
-              Upload
-            </button>
+    onClick={uploadFile}
+    disabled={loading}
+>
+    {loading ? "Uploading..." : "Upload"}
+</button>
           </div>
         </div>
 
@@ -165,6 +194,7 @@ function App() {
               Ask
             </button>
           </div>
+
 
           {chatHistory.length > 0 && (
   <div className="mt-6">
@@ -280,6 +310,12 @@ function App() {
         )}
 
       </div>
+      <button
+  onClick={downloadSummary}
+  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded mb-4"
+>
+  ⬇ Download Summary PDF
+</button>
     </div>
   );
 }
