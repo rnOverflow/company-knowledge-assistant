@@ -7,6 +7,7 @@ function App() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [sources, setSources] = useState([]);
+  const [chatHistory, setChatHistory] = useState([]);
 
   const [summary, setSummary] = useState("");
   const [quiz, setQuiz] = useState("");
@@ -48,6 +49,14 @@ function App() {
 
       setAnswer(response.data.answer);
       setSources(response.data.sources || []);
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          question: question,
+          answer: response.data.answer,
+          sources: response.data.sources || [],
+        },
+      ]);
     } catch (error) {
       console.log(error);
       alert("Error asking question");
@@ -109,13 +118,13 @@ function App() {
       <div className="max-w-5xl mx-auto">
 
         <h1 className="text-5xl font-bold text-center mb-10">
-          🏢 Company Knowledge Assistant
+           Company Knowledge Assistant
         </h1>
 
         {/* Upload Section */}
         <div className="bg-slate-900 rounded-xl p-6 mb-6 shadow-lg">
           <h2 className="text-2xl font-semibold mb-4">
-            📄 Upload Document
+             Upload Document
           </h2>
 
           <div className="flex gap-4">
@@ -137,7 +146,7 @@ function App() {
         {/* Chat */}
         <div className="bg-slate-900 rounded-xl p-6 mb-6 shadow-lg">
           <h2 className="text-2xl font-semibold mb-4">
-            💬 Ask Questions
+             Ask Questions
           </h2>
 
           <div className="flex gap-4">
@@ -157,31 +166,55 @@ function App() {
             </button>
           </div>
 
-          {answer && (
-            <div className="mt-6">
-              <h3 className="text-xl font-bold mb-2">
-                Answer
-              </h3>
+          {chatHistory.length > 0 && (
+  <div className="mt-6">
+    <h3 className="text-2xl font-bold mb-4">
+       Chat History
+    </h3>
 
-              <p className="bg-slate-800 p-4 rounded">
-                {answer}
-              </p>
+<button
+  onClick={() => setChatHistory([])}
+  className="bg-red-600 px-4 py-2 rounded"
+>
+   Clear Chat
+</button>
 
-              {sources.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="font-semibold mb-2">
-                    📚 Sources Used
-                  </h4>
+    {chatHistory.map((chat, index) => (
+      <div
+        key={index}
+        className="bg-slate-800 p-5 rounded-xl mb-4"
+      >
+        <p className="font-bold text-green-400">
+          You:
+        </p>
 
-                  <ul className="list-disc ml-6 text-gray-300">
-                    {sources.map((src, index) => (
-                      <li key={index}>{src}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
+        <p className="mb-4">
+          {chat.question}
+        </p>
+
+        <p className="font-bold text-blue-400">
+          AI:
+        </p>
+
+        <p>{chat.answer}</p>
+
+        {chat.sources.length > 0 && (
+          <div className="mt-4">
+            <p className="font-semibold">
+               Sources:
+            </p>
+
+            <ul className="list-disc ml-6 text-gray-300">
+              {chat.sources.map((src, idx) => (
+                <li key={idx}>{src}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+)}
         </div>
 
         {/* Action Buttons */}

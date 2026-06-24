@@ -2,6 +2,8 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
+import shutil
+import os
 
 
 CHROMA_PATH = "backend/app/database/chroma_db"
@@ -20,6 +22,11 @@ def ingest_document(file_path: str):
     )
 
     chunks = text_splitter.split_documents(documents)
+
+    # Clear previous Chroma database so only the latest uploaded document is indexed
+    #if os.path.exists(CHROMA_PATH):
+     #   shutil.rmtree(CHROMA_PATH)
+      #  os.makedirs(CHROMA_PATH, exist_ok=True)
 
     # Create embeddings
     embeddings = HuggingFaceEmbeddings(
