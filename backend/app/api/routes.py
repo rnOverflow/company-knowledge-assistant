@@ -28,19 +28,28 @@ class ChatRequest(BaseModel):
     question: str
 
 
+from typing import List
+
 @router.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
+async def upload_document(
+    files: List[UploadFile] = File(...)
+):
 
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    total_chunks = 0
 
-    chunks = ingest_document(file_path)
+    for file in files:
+
+        file_path = os.path.join(UPLOAD_DIR, file.filename)
+
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        chunks = ingest_document(file_path)
+        total_chunks += chunks
 
     return {
-        "message": "File uploaded and indexed successfully",
-        "filename": file.filename,
-        "chunks_created": chunks
+        "message": "Documents uploaded and indexed successfully",
+        "chunks_created": total_chunks
     }
 
 

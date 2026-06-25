@@ -20,28 +20,30 @@ function App() {
 
   const [loading, setLoading] = useState(false);
 
-  const uploadFile = async () => {
-    if (!file) return alert("Please select a file");
+const uploadFile = async () => {
 
     const formData = new FormData();
-    formData.append("file", file);
+
+    for (let i = 0; i < file.length; i++) {
+        formData.append("files", file[i]);
+    }
 
     try {
-      setLoading(true);
+        setLoading(true);
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/upload",
-        formData
-      );
+        const response = await axios.post(
+            "http://127.0.0.1:8000/upload",
+            formData
+        );
 
-      alert(response.data.message);
+        alert(response.data.message);
+
     } catch (error) {
-      console.log(error);
-      alert("Upload failed");
+        console.log(error);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   const askQuestion = async () => {
     try {
@@ -158,10 +160,13 @@ function App() {
 
           <div className="flex gap-4">
             <input
-              type="file"
-              onChange={(e) => setFile(e.target.files[0])}
-              className="border p-2 rounded w-full"
+                type="file"
+                multiple
+                onChange={(e) => setFile(e.target.files)}
             />
+            <p className="mt-2 text-gray-300">
+              {file && Array.from(file).map((f) => f.name).join(", ")}
+            </p>
 
             <button
     onClick={uploadFile}
@@ -181,6 +186,7 @@ function App() {
           <div className="flex gap-4">
             <input
               type="text"
+              multiple
               placeholder="Ask a question..."
               value={question}
               onChange={(e) => setQuestion(e.target.value)}

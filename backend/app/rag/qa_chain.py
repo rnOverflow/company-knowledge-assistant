@@ -12,27 +12,31 @@ client = Groq(
 def generate_answer(question, context):
 
     prompt = f"""
-You are an AI assistant.
+You are an AI assistant that answers questions using ONLY the provided context.
 
-Answer ONLY using the information provided in the context.
+Instructions:
 
-If the answer is not present in the context, respond with:
+- Use the context to answer the question clearly and completely.
 
-"I could not find this information in the uploaded document."
+- If the context contains relevant information, answer in detail.
 
-Do not make assumptions.
+- Do not use outside knowledge.
 
-Do not invent information.
+- If the answer truly does not exist in the context, say:
 
-Do not use external knowledge.
+  "I could not find this information in the uploaded document."
+  
 
 Context:
+
 {context}
 
 Question:
+
 {question}
 
-Answer:
+Detailed Answer:
+
 """
 
     response = client.chat.completions.create(
