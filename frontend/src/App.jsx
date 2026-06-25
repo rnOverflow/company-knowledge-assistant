@@ -19,6 +19,10 @@ function App() {
   const [insights, setInsights] = useState("");
 
   const [loading, setLoading] = useState(false);
+  const [actionItems, setActionItems] = useState("");
+  const [entities, setEntities] = useState("");
+  const [deadlines, setDeadlines] = useState("");
+  const [selectedDocument, setSelectedDocument] = useState("");
 
 const uploadFile = async () => {
 
@@ -37,6 +41,9 @@ const uploadFile = async () => {
         );
 
         alert(response.data.message);
+        if (files.length > 0) {
+          setSelectedDocument(files[0].name);
+        }
 
     } catch (error) {
         console.log(error);
@@ -51,7 +58,8 @@ const uploadFile = async () => {
 
       const response = await axios.post(
         "http://127.0.0.1:8000/chat",
-        { question }
+        { question,
+          document_name: selectedDocument }
       );
 
       setAnswer(response.data.answer);
@@ -119,6 +127,75 @@ const uploadFile = async () => {
       setLoading(false);
     }
   };
+
+  const getActionItems = async () => {
+
+  try {
+
+    setLoading(true);
+
+    const response = await axios.get(
+      "http://127.0.0.1:8000/action-items"
+    );
+
+    setActionItems(response.data.action_items);
+
+  } catch (error) {
+
+    console.log(error);
+    alert("Failed to extract action items");
+
+  } finally {
+
+    setLoading(false);
+  }
+};
+
+const getEntities = async () => {
+
+  try {
+
+    setLoading(true);
+
+    const response = await axios.get(
+      "http://127.0.0.1:8000/entities"
+    );
+
+    setEntities(response.data.entities);
+
+  } catch (error) {
+
+    console.log(error);
+    alert("Failed to extract entities");
+
+  } finally {
+
+    setLoading(false);
+  }
+};
+
+const getDeadlines = async () => {
+
+  try {
+
+    setLoading(true);
+
+    const response = await axios.get(
+      "http://127.0.0.1:8000/deadlines"
+    );
+
+    setDeadlines(response.data.deadlines);
+
+  } catch (error) {
+
+    console.log(error);
+    alert("Failed to extract deadlines");
+
+  } finally {
+
+    setLoading(false);
+  }
+};
 
   const downloadSummary = () => {
 
@@ -277,6 +354,26 @@ const uploadFile = async () => {
              Extract Insights
           </button>
 
+          <button
+            onClick={getActionItems}
+            className="bg-yellow-600 px-4 py-2 rounded-xl hover:bg-yellow-700"
+          >
+            Extract Action Items
+          </button>
+
+          <button
+            onClick={getEntities}
+            className="bg-cyan-600 px-4 py-2 rounded-xl hover:bg-cyan-700"
+          >
+            Extract Entities
+          </button>
+
+          <button
+            onClick={getDeadlines}
+            className="bg-red-600 px-4 py-2 rounded-xl hover:bg-red-700"
+          >
+            Extract Deadlines
+          </button>
         </div>
 
         {/* Results */}
@@ -309,6 +406,48 @@ const uploadFile = async () => {
           </div>
         )}
 
+        {actionItems && (
+          <div className="bg-slate-900 p-6 rounded-xl mb-6">
+
+            <h2 className="text-xl font-bold mb-4">
+              Action Items
+            </h2>
+
+            <pre className="whitespace-pre-wrap">
+              {actionItems}
+            </pre>
+
+          </div>
+        )}
+
+        {entities && (
+          <div className="bg-slate-900 p-6 rounded-xl mb-6">
+
+            <h2 className="text-xl font-bold mb-4">
+              Entities
+            </h2>
+
+            <pre className="whitespace-pre-wrap">
+              {entities}
+            </pre>
+
+          </div>
+        )}
+
+        {deadlines && (
+          <div className="bg-slate-900 p-6 rounded-xl mb-6">
+
+            <h2 className="text-xl font-bold mb-4">
+              Deadlines & Important Dates
+            </h2>
+
+            <pre className="whitespace-pre-wrap">
+              {deadlines}
+            </pre>
+
+          </div>
+        )}
+
         {loading && (
           <h2 className="text-center text-2xl mt-8">
              Processing...
@@ -320,7 +459,7 @@ const uploadFile = async () => {
   onClick={downloadSummary}
   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded mb-4"
 >
-  ⬇ Download Summary PDF
+  Download Summary PDF
 </button>
     </div>
   );

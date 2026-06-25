@@ -2,11 +2,14 @@ from backend.app.services.insights import extract_insights
 from backend.app.services.quiz_generator import generate_quiz
 from backend.app.services.summarizer import summarize_document
 from pydantic import BaseModel
+from backend.app.services.action_items import extract_action_items
+from backend.app.services.entities import extract_entities
+from backend.app.services.deadlines import extract_deadlines
 
 
 class QuestionRequest(BaseModel):
-
     question: str
+    document_name: str | None = None
 from backend.app.rag.ingest import ingest_document
 from backend.app.rag.retriever import retrieve_documents
 from backend.app.rag.qa_chain import generate_answer
@@ -57,7 +60,10 @@ async def upload_document(
 @router.post("/chat")
 async def chat(request: QuestionRequest):
 
-    docs = retrieve_documents(request.question)
+    docs = retrieve_documents(request.question,
+                              k=10,
+        document_name=request.document_name
+    )
 
     context = "\n\n".join(
         [doc.page_content for doc in docs]
@@ -67,6 +73,11 @@ async def chat(request: QuestionRequest):
         request.question,
         context
     )
+    return {
+
+        "answer": answer
+
+    }
 
     sources = []
 
@@ -122,7 +133,7 @@ async def quiz():
 async def insights():
 
     docs = retrieve_documents(
-        "Extract key insights from the document",
+        "company names people departments technologies policies dates",
         k=10
     )
 
@@ -134,4 +145,58 @@ async def insights():
 
     return {
         "insights": insights
+    }
+
+@router.get("/action-items")
+async def action_items():
+
+    docs = retrieve_documents(
+        "Extract all action items from the document",
+        k=10
+    )
+
+    context = "\n\n".join(
+        [doc.page_content for doc in docs]
+    )
+
+    items = extract_action_items(context)
+
+    return {
+        "action_items": items
+    }
+
+@router.get("/entities")
+async def entities():
+
+    docs = retrieve_documents(
+        "Extract important entities from the document",
+        k=10
+    )
+
+    context = "\n\n".join(
+        [doc.page_content for doc in docs]
+    )
+
+    entities = extract_entities(context)
+
+    return {
+        "entities": entities
+    }
+
+@router.get("/deadlines")
+async def deadlines():
+
+    docs = retrieve_documents(
+        "Extract all deadlines, due dates, meetings, milestones and important dates",
+        k=10
+    )
+
+    context = "\n\n".join(
+        [doc.page_content for doc in docs]
+    )
+
+    result = extract_deadlines(context)
+
+    return {
+        "deadlines": result
     }
