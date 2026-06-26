@@ -83,8 +83,8 @@ Installation and Setup
 
 1. Clone the Repository
 
-git clone https://github.com/rnOverflow/company-knowledge-assistant.git
-cd company-knowledge-assistant
+git clone https://github.com/rnOverflow/document-analysis-assistant.git
+cd document-analysis-assistant
 
 2. Create a Virtual Environment
 
