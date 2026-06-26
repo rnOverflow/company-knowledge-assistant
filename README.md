@@ -1,4 +1,4 @@
-Document Analyser Assistant
+Document Analysis Assistant
 
 An AI-powered document analysis platform that enables organizations to upload documents, extract insights, generate summaries, compare documents, and interact with enterprise knowledge using natural language.
 
