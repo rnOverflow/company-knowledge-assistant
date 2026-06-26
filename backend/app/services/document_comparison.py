@@ -1,5 +1,5 @@
-from backend.app.rag.retriever import retrieve_documents
-from backend.app.rag.qa_chain import generate_answer
+from app.rag.retriever import retrieve_documents
+from app.rag.qa_chain import generate_answer
 
 def compare_documents(doc1, doc2):
 

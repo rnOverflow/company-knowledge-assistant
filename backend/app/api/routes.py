@@ -1,21 +1,21 @@
-from backend.app.services.insights import extract_insights
-from backend.app.services.quiz_generator import generate_quiz
-from backend.app.services.summarizer import summarize_document
+from app.services.insights import extract_insights
+from app.services.quiz_generator import generate_quiz
+from app.services.summarizer import summarize_document
 from pydantic import BaseModel
-from backend.app.services.action_items import extract_action_items
-from backend.app.services.entities import extract_entities
-from backend.app.services.deadlines import extract_deadlines
+from app.services.action_items import extract_action_items
+from app.services.entities import extract_entities
+from app.services.deadlines import extract_deadlines
 
 
 class QuestionRequest(BaseModel):
     question: str
     document_name: str | None = None
-from backend.app.rag.ingest import ingest_document
-from backend.app.rag.retriever import retrieve_documents
-from backend.app.rag.qa_chain import generate_answer
+from app.rag.ingest import ingest_document
+from app.rag.retriever import retrieve_documents
+from app.rag.qa_chain import generate_answer
 
-from backend.app.services.document_comparison import compare_documents
-from backend.app.services.chat_memory import add_to_history
+from app.services.document_comparison import compare_documents
+from app.services.chat_memory import add_to_history
 from fastapi import APIRouter, UploadFile, File
 from pydantic import BaseModel
 import shutil

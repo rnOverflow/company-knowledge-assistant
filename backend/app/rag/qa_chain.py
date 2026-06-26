@@ -1,7 +1,7 @@
 import os
 from groq import Groq
 from dotenv import load_dotenv
-from backend.app.services.chat_memory import get_chat_history
+from app.services.chat_memory import get_chat_history
 
 load_dotenv("backend/.env")
 
