@@ -60,35 +60,29 @@ async def upload_document(
 @router.post("/chat")
 async def chat(request: QuestionRequest):
 
-    docs = retrieve_documents(request.question,
-                              k=10,
+    docs = retrieve_documents(
+        request.question,
+        k=10,
         document_name=request.document_name
     )
 
-    context = "\n\n".join(
-        [doc.page_content for doc in docs]
-    )
-
-    answer = generate_answer(
-        request.question,
-        context
-    )
-    return {
-
-        "answer": answer
-
-    }
+    answer = generate_answer(request.question, docs)
 
     sources = []
 
-    for i, doc in enumerate(docs):
-        source = doc.metadata.get(
+    for doc in docs:
+        filename = doc.metadata.get(
             "source",
-            "Unknown Document"
+            "Unknown"
+        )
+
+        page = doc.metadata.get(
+            "page_number",
+            "N/A"
         )
 
         sources.append(
-            f"{source} (Chunk {i + 1})"
+            f"{filename} - Page {page}"
         )
 
     return {
