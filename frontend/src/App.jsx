@@ -1,598 +1,500 @@
 import { useState } from "react";
 import axios from "axios";
 import jsPDF from "jspdf";
+import {
+  Upload,
+  MessageSquare,
+  FileText,
+  Zap,
+  BookOpen,
+  Lightbulb,
+  CheckSquare,
+  Tag,
+  Clock,
+  GitCompare,
+  Download,
+  Trash2,
+  ChevronDown,
+  Loader2,
+  Sparkles,
+  Bot,
+  User,
+} from "lucide-react";
+import "./App.css";
+
+// ── Reusable primitives ────────────────────────────────────────────────────
+
+function GlassCard({ children, className = "" }) {
+  return <div className={`glass-card ${className}`}>{children}</div>;
+}
+
+function SectionHeader({ icon: Icon, title, subtitle }) {
+  return (
+    <div className="section-header">
+      <div className="section-icon">
+        <Icon size={18} />
+      </div>
+      <div>
+        <h2 className="section-title">{title}</h2>
+        {subtitle && <p className="section-subtitle">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
+function ActionButton({ onClick, disabled, loading, variant = "primary", icon: Icon, children, className = "" }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={`action-btn action-btn--${variant} ${className}`}
+    >
+      {loading ? (
+        <Loader2 size={15} className="spin" />
+      ) : Icon ? (
+        <Icon size={15} />
+      ) : null}
+      <span>{children}</span>
+    </button>
+  );
+}
+
+function ResultPanel({ title, icon: Icon, content, accentClass = "" }) {
+  if (!content) return null;
+  return (
+    <GlassCard className={`result-panel ${accentClass}`}>
+      <div className="result-panel__header">
+        <Icon size={16} />
+        <h3>{title}</h3>
+      </div>
+      <pre className="result-panel__body">{content}</pre>
+    </GlassCard>
+  );
+}
+
+// ── Main App ───────────────────────────────────────────────────────────────
 
 function App() {
   const [file, setFile] = useState(null);
-
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [sources, setSources] = useState([]);
   const [chatHistory, setChatHistory] = useState([]);
-  const [loadingAnswer, setLoadingAnswer] = useState(false);
-  const [loadingSummary, setLoadingSummary] = useState(false);
-  const [loadingQuiz, setLoadingQuiz] = useState(false);
-  const [loadingInsights, setLoadingInsights] = useState(false);
 
   const [summary, setSummary] = useState("");
   const [quiz, setQuiz] = useState("");
   const [insights, setInsights] = useState("");
-
-  const [loading, setLoading] = useState(false);
   const [actionItems, setActionItems] = useState("");
   const [entities, setEntities] = useState("");
   const [deadlines, setDeadlines] = useState("");
+  const [comparison, setComparison] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [activeLoader, setActiveLoader] = useState("");
+
   const [uploadedDocs, setUploadedDocs] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState("");
   const [compareDoc1, setCompareDoc1] = useState("");
   const [compareDoc2, setCompareDoc2] = useState("");
-  const [comparison, setComparison] = useState("");
 
-const uploadFile = async () => {
+  const startLoad = (key) => { setLoading(true); setActiveLoader(key); };
+  const stopLoad = () => { setLoading(false); setActiveLoader(""); };
 
+  const uploadFile = async () => {
     const formData = new FormData();
-
-    for (let i = 0; i < file.length; i++) {
-        formData.append("files", file[i]);
-    }
-
+    for (let i = 0; i < file.length; i++) formData.append("files", file[i]);
     try {
-        setLoading(true);
-
-        const response = await axios.post(
-            "http://127.0.0.1:8000/upload",
-            formData
-        );
-
-        alert(response.data.message);
-        const names = Array.from(file).map(f => f.name);
-
-        setUploadedDocs(prev => [
-            ...new Set([...prev, ...names])
-        ]);
-
-        if (names.length > 0) {
-            setSelectedDocument(names[0]);
-        }
-
+      startLoad("upload");
+      const response = await axios.post("http://127.0.0.1:8000/upload", formData);
+      alert(response.data.message);
+      const names = Array.from(file).map((f) => f.name);
+      setUploadedDocs((prev) => [...new Set([...prev, ...names])]);
+      if (names.length > 0) setSelectedDocument(names[0]);
     } catch (error) {
-        console.log(error);
+      console.log(error);
     } finally {
-        setLoading(false);
+      stopLoad();
     }
-};
+  };
 
   const askQuestion = async () => {
     try {
-      setLoading(true);
-
-      const response = await axios.post(
-        "http://127.0.0.1:8000/chat",
-        { question,
-          document_name: selectedDocument }
-      );
-
+      startLoad("chat");
+      const response = await axios.post("http://127.0.0.1:8000/chat", {
+        question,
+        document_name: selectedDocument,
+      });
       setAnswer(response.data.answer);
       setSources(response.data.sources || []);
       setChatHistory((prev) => [
         ...prev,
-        {
-          question: question,
-          answer: response.data.answer,
-          sources: response.data.sources || [],
-        },
+        { question, answer: response.data.answer, sources: response.data.sources || [] },
       ]);
+      setQuestion("");
     } catch (error) {
       console.log(error);
       alert("Error asking question");
     } finally {
-      setLoading(false);
+      stopLoad();
     }
   };
 
   const summarizeDocument = async () => {
     try {
-      setLoading(true);
-
-      const response = await axios.get(
-        "http://127.0.0.1:8000/summarize"
-      );
-
+      startLoad("summary");
+      const response = await axios.get("http://127.0.0.1:8000/summarize");
       setSummary(response.data.summary);
     } catch (error) {
       console.log(error);
     } finally {
-      setLoading(false);
+      stopLoad();
     }
   };
 
   const generateQuiz = async () => {
     try {
-      setLoading(true);
-
-      const response = await axios.get(
-        "http://127.0.0.1:8000/generate-quiz"
-      );
-
+      startLoad("quiz");
+      const response = await axios.get("http://127.0.0.1:8000/generate-quiz");
       setQuiz(response.data.quiz_questions);
     } catch (error) {
       console.log(error);
     } finally {
-      setLoading(false);
+      stopLoad();
     }
   };
 
   const extractInsights = async () => {
     try {
-      setLoading(true);
-
-      const response = await axios.get(
-        "http://127.0.0.1:8000/extract-insights"
-      );
-
+      startLoad("insights");
+      const response = await axios.get("http://127.0.0.1:8000/extract-insights");
       setInsights(response.data.insights);
     } catch (error) {
       console.log(error);
     } finally {
-      setLoading(false);
+      stopLoad();
     }
   };
 
   const getActionItems = async () => {
+    try {
+      startLoad("actions");
+      const response = await axios.get("http://127.0.0.1:8000/action-items");
+      setActionItems(response.data.action_items);
+    } catch (error) {
+      console.log(error);
+      alert("Failed to extract action items");
+    } finally {
+      stopLoad();
+    }
+  };
 
-  try {
+  const getEntities = async () => {
+    try {
+      startLoad("entities");
+      const response = await axios.get("http://127.0.0.1:8000/entities");
+      setEntities(response.data.entities);
+    } catch (error) {
+      console.log(error);
+      alert("Failed to extract entities");
+    } finally {
+      stopLoad();
+    }
+  };
 
-    setLoading(true);
+  const getDeadlines = async () => {
+    try {
+      startLoad("deadlines");
+      const response = await axios.get("http://127.0.0.1:8000/deadlines");
+      setDeadlines(response.data.deadlines);
+    } catch (error) {
+      console.log(error);
+      alert("Failed to extract deadlines");
+    } finally {
+      stopLoad();
+    }
+  };
 
-    const response = await axios.get(
-      "http://127.0.0.1:8000/action-items"
-    );
-
-    setActionItems(response.data.action_items);
-
-  } catch (error) {
-
-    console.log(error);
-    alert("Failed to extract action items");
-
-  } finally {
-
-    setLoading(false);
-  }
-};
-
-const getEntities = async () => {
-
-  try {
-
-    setLoading(true);
-
-    const response = await axios.get(
-      "http://127.0.0.1:8000/entities"
-    );
-
-    setEntities(response.data.entities);
-
-  } catch (error) {
-
-    console.log(error);
-    alert("Failed to extract entities");
-
-  } finally {
-
-    setLoading(false);
-  }
-};
-
-const getDeadlines = async () => {
-
-  try {
-
-    setLoading(true);
-
-    const response = await axios.get(
-      "http://127.0.0.1:8000/deadlines"
-    );
-
-    setDeadlines(response.data.deadlines);
-
-  } catch (error) {
-
-    console.log(error);
-    alert("Failed to extract deadlines");
-
-  } finally {
-
-    setLoading(false);
-  }
-};
-
-const compareDocuments = async () => {
-
-  if (!compareDoc1 || !compareDoc2) {
-  alert("Please select both documents");
-  return;
-  }
-  
-  if (compareDoc1 === compareDoc2) {
-    alert("Please select two different documents");
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    const response = await axios.get(
-      "http://127.0.0.1:8000/compare",
-      {
-        params: {
-          doc1: compareDoc1,
-          doc2: compareDoc2
-        }
-      }
-    );
-
-    setComparison(response.data.comparison);
-
-  } catch (error) {
-    console.log(error);
-    alert("Failed to compare documents");
-  } finally {
-    setLoading(false);
-  }
-};
+  const compareDocuments = async () => {
+    if (!compareDoc1 || !compareDoc2) { alert("Please select both documents"); return; }
+    if (compareDoc1 === compareDoc2) { alert("Please select two different documents"); return; }
+    try {
+      startLoad("compare");
+      const response = await axios.get("http://127.0.0.1:8000/compare", {
+        params: { doc1: compareDoc1, doc2: compareDoc2 },
+      });
+      setComparison(response.data.comparison);
+    } catch (error) {
+      console.log(error);
+      alert("Failed to compare documents");
+    } finally {
+      stopLoad();
+    }
+  };
 
   const downloadSummary = () => {
+    if (!summary) { alert("Generate a summary first!"); return; }
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Company Knowledge Assistant", 20, 20);
+    doc.setFontSize(14);
+    doc.text("Document Summary", 20, 35);
+    doc.setFontSize(11);
+    const splitText = doc.splitTextToSize(summary, 170);
+    doc.text(splitText, 20, 50);
+    doc.save("document-summary.pdf");
+  };
 
-  if (!summary) {
-    alert("Generate a summary first!");
-    return;
-  }
-
-  const doc = new jsPDF();
-
-  doc.setFontSize(18);
-  doc.text("Company Knowledge Assistant", 20, 20);
-
-  doc.setFontSize(14);
-  doc.text("Document Summary", 20, 35);
-
-  doc.setFontSize(11);
-
-  const splitText = doc.splitTextToSize(summary, 170);
-
-  doc.text(splitText, 20, 50);
-
-  doc.save("document-summary.pdf");
-};
+  const isLoading = (key) => loading && activeLoader === key;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="app-root">
+      {/* Ambient background orbs */}
+      <div className="bg-orb bg-orb--purple" />
+      <div className="bg-orb bg-orb--blue" />
 
-        <h1 className="text-5xl font-bold text-center mb-10">
-           Company Knowledge Assistant
-        </h1>
+      <div className="app-container">
 
-        {/* Upload Section */}
-        <div className="bg-slate-900 rounded-xl p-6 mb-6 shadow-lg">
-          <h2 className="text-2xl font-semibold mb-4">
-             Upload Document
-          </h2>
+        {/* ── Header ── */}
+        <header className="app-header">
+          <div className="app-header__logo">
+            <Sparkles size={22} className="logo-icon" />
+            <span className="logo-text">DocIntel</span>
+          </div>
+          <p className="app-header__tagline">
+            AI-powered document intelligence
+          </p>
+        </header>
 
-          <div className="flex gap-4">
-            <input
+        {/* ── Upload ── */}
+        <GlassCard>
+          <SectionHeader icon={Upload} title="Upload documents" subtitle="PDF, DOCX, TXT — multi-file supported" />
+
+          <div className="upload-row">
+            <label className="file-label">
+              <input
                 type="file"
                 multiple
+                className="file-input-hidden"
                 onChange={(e) => setFile(e.target.files)}
-            />
-            <p className="mt-2 text-gray-300">
-              {file && Array.from(file).map((f) => f.name).join(", ")}
-            </p>
+              />
+              <Upload size={14} />
+              <span>{file ? Array.from(file).map((f) => f.name).join(", ") : "Choose files"}</span>
+            </label>
 
-            <button
-                onClick={uploadFile}
-                disabled={loading}
+            <ActionButton
+              onClick={uploadFile}
+              disabled={!file}
+              loading={isLoading("upload")}
+              icon={Upload}
             >
-                {loading ? "Uploading..." : "Upload"}
-            </button>
+              {isLoading("upload") ? "Uploading…" : "Upload"}
+            </ActionButton>
           </div>
 
           {uploadedDocs.length > 0 && (
-          <div className="mt-4 mb-4">
-            <label className="block mb-2 text-lg font-semibold">
-              Select Document
-            </label>
-            <select
-              value={selectedDocument}
-              onChange={(e) => setSelectedDocument(e.target.value)}
-              className="w-full p-3 rounded-lg bg-slate-800 border border-gray-600"
-            >
-              {uploadedDocs.map((doc, index) => (
-                <option key={index} value={doc}>
-                  {doc}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="doc-select-wrap">
+              <label className="field-label">Active document</label>
+              <div className="select-wrapper">
+                <FileText size={14} className="select-icon" />
+                <select
+                  value={selectedDocument}
+                  onChange={(e) => setSelectedDocument(e.target.value)}
+                  className="styled-select"
+                >
+                  {uploadedDocs.map((doc, i) => (
+                    <option key={i} value={doc}>{doc}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="select-caret" />
+              </div>
+            </div>
+          )}
+        </GlassCard>
+
+        {/* ── Compare ── */}
+        {uploadedDocs.length >= 2 && (
+          <GlassCard>
+            <SectionHeader icon={GitCompare} title="Compare documents" subtitle="Side-by-side AI analysis of two uploads" />
+
+            <div className="compare-row">
+              <div className="select-wrapper">
+                <FileText size={14} className="select-icon" />
+                <select
+                  value={compareDoc1}
+                  onChange={(e) => setCompareDoc1(e.target.value)}
+                  className="styled-select"
+                >
+                  <option value="">Document A</option>
+                  {uploadedDocs.map((doc, i) => <option key={i} value={doc}>{doc}</option>)}
+                </select>
+                <ChevronDown size={14} className="select-caret" />
+              </div>
+
+              <div className="compare-divider">vs</div>
+
+              <div className="select-wrapper">
+                <FileText size={14} className="select-icon" />
+                <select
+                  value={compareDoc2}
+                  onChange={(e) => setCompareDoc2(e.target.value)}
+                  className="styled-select"
+                >
+                  <option value="">Document B</option>
+                  {uploadedDocs.map((doc, i) => <option key={i} value={doc}>{doc}</option>)}
+                </select>
+                <ChevronDown size={14} className="select-caret" />
+              </div>
+
+              <ActionButton
+                onClick={compareDocuments}
+                disabled={!compareDoc1 || !compareDoc2}
+                loading={isLoading("compare")}
+                variant="secondary"
+                icon={GitCompare}
+              >
+                Compare
+              </ActionButton>
+            </div>
+
+            {comparison && (
+              <ResultPanel title="Comparison" icon={GitCompare} content={comparison} />
+            )}
+          </GlassCard>
         )}
-        </div>
 
-{/* Compare Documents */}
+        {/* ── Chat ── */}
+        <GlassCard>
+          <SectionHeader icon={MessageSquare} title="Ask questions" subtitle="Query any uploaded document with natural language" />
 
-{uploadedDocs.length >= 2 && (
-
-<div className="bg-slate-900 rounded-xl p-6 mb-6">
-
-  <h2 className="text-2xl font-bold mb-4">
-    Compare Documents
-  </h2>
-
-  <div className="grid grid-cols-2 gap-4 mb-4">
-
-    <select
-      value={compareDoc1}
-      onChange={(e) => setCompareDoc1(e.target.value)}
-      className="p-3 rounded-lg bg-slate-800"
-    >
-      <option value="">Select Document 1</option>
-
-      {uploadedDocs.map((doc, index) => (
-        <option key={index} value={doc}>
-          {doc}
-        </option>
-      ))}
-
-    </select>
-
-    <select
-      value={compareDoc2}
-      onChange={(e) => setCompareDoc2(e.target.value)}
-      className="p-3 rounded-lg bg-slate-800"
-    >
-      <option value="">Select Document 2</option>
-
-      {uploadedDocs.map((doc, index) => (
-        <option key={index} value={doc}>
-          {doc}
-        </option>
-      ))}
-
-    </select>
-
-  </div>
-
-  <button
-    onClick={compareDocuments}
-    disabled={!compareDoc1 || !compareDoc2}
-    className="bg-blue-600 px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-  >
-    Compare
-  </button>
-
-</div>
-
-)}
-
-        {/* Chat */}
-        <div className="bg-slate-900 rounded-xl p-6 mb-6 shadow-lg">
-          <h2 className="text-2xl font-semibold mb-4">
-             Ask Questions
-          </h2>
-
-          <div className="flex gap-4">
+          <div className="chat-input-row">
             <input
               type="text"
-              multiple
-              placeholder="Ask a question..."
+              placeholder="What does this document say about…"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              className="flex-1 p-3 rounded bg-slate-800 border"
+              onKeyDown={(e) => e.key === "Enter" && !loading && question.trim() && askQuestion()}
+              className="chat-input"
             />
-
-            <button
+            <ActionButton
               onClick={askQuestion}
-              className="bg-green-600 px-6 rounded hover:bg-green-700"
+              disabled={!question.trim()}
+              loading={isLoading("chat")}
+              icon={MessageSquare}
             >
               Ask
-            </button>
+            </ActionButton>
           </div>
-
 
           {chatHistory.length > 0 && (
-  <div className="mt-6">
-    <h3 className="text-2xl font-bold mb-4">
-       Chat History
-    </h3>
+            <div className="chat-history">
+              <div className="chat-history__topbar">
+                <span className="chat-history__label">Conversation</span>
+                <button
+                  onClick={() => setChatHistory([])}
+                  className="clear-btn"
+                >
+                  <Trash2 size={13} /> Clear
+                </button>
+              </div>
 
-<button
-  onClick={() => setChatHistory([])}
-  className="bg-red-600 px-4 py-2 rounded"
->
-   Clear Chat
-</button>
+              <div className="chat-messages">
+                {chatHistory.map((chat, i) => (
+                  <div key={i} className="chat-thread">
+                    <div className="chat-bubble chat-bubble--user">
+                      <div className="bubble-avatar bubble-avatar--user">
+                        <User size={12} />
+                      </div>
+                      <div className="bubble-content">{chat.question}</div>
+                    </div>
 
-    {chatHistory.map((chat, index) => (
-      <div
-        key={index}
-        className="bg-slate-800 p-5 rounded-xl mb-4"
-      >
-        <p className="font-bold text-green-400">
-          You:
-        </p>
+                    <div className="chat-bubble chat-bubble--ai">
+                      <div className="bubble-avatar bubble-avatar--ai">
+                        <Bot size={12} />
+                      </div>
+                      <div className="bubble-content">
+                        <p>{chat.answer}</p>
+                        {chat.sources.length > 0 && (
+                          <div className="sources">
+                            <span className="sources__label">Sources</span>
+                            <ul className="sources__list">
+                              {chat.sources.map((src, idx) => (
+                                <li key={idx}>{src}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </GlassCard>
 
-        <p className="mb-4">
-          {chat.question}
-        </p>
+        {/* ── Analysis actions ── */}
+        <GlassCard>
+          <SectionHeader icon={Zap} title="Analyze document" subtitle="Run AI-powered extractions on the active document" />
 
-        <p className="font-bold text-blue-400">
-          AI:
-        </p>
-
-        <p>{chat.answer}</p>
-
-        {chat.sources.length > 0 && (
-          <div className="mt-4">
-            <p className="font-semibold">
-               Sources:
-            </p>
-
-            <ul className="list-disc ml-6 text-gray-300">
-              {chat.sources.map((src, idx) => (
-                <li key={idx}>{src}</li>
-              ))}
-            </ul>
+          <div className="action-grid">
+            <ActionButton onClick={summarizeDocument} loading={isLoading("summary")} variant="purple" icon={FileText}>
+              Summarize
+            </ActionButton>
+            <ActionButton onClick={generateQuiz} loading={isLoading("quiz")} variant="pink" icon={BookOpen}>
+              Generate quiz
+            </ActionButton>
+            <ActionButton onClick={extractInsights} loading={isLoading("insights")} variant="orange" icon={Lightbulb}>
+              Extract insights
+            </ActionButton>
+            <ActionButton onClick={getActionItems} loading={isLoading("actions")} variant="yellow" icon={CheckSquare}>
+              Action items
+            </ActionButton>
+            <ActionButton onClick={getEntities} loading={isLoading("entities")} variant="cyan" icon={Tag}>
+              Extract entities
+            </ActionButton>
+            <ActionButton onClick={getDeadlines} loading={isLoading("deadlines")} variant="red" icon={Clock}>
+              Deadlines
+            </ActionButton>
           </div>
-        )}
-      </div>
-    ))}
-  </div>
-)}
-        </div>
+        </GlassCard>
 
-        {/* Action Buttons */}
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
+        {/* ── Results ── */}
+        {(summary || quiz || insights || actionItems || entities || deadlines) && (
+          <div className="results-section">
+            <div className="results-header">
+              <h2 className="results-title">
+                <Sparkles size={16} /> Results
+              </h2>
+              {summary && (
+                <ActionButton onClick={downloadSummary} variant="ghost" icon={Download}>
+                  Download summary PDF
+                </ActionButton>
+              )}
+            </div>
 
-          <button
-            onClick={summarizeDocument}
-            className="bg-purple-600 p-4 rounded-xl hover:bg-purple-700"
-          >
-             Generate Summary
-          </button>
-
-          <button
-            onClick={generateQuiz}
-            className="bg-pink-600 p-4 rounded-xl hover:bg-pink-700"
-          >
-             Generate Quiz
-          </button>
-
-          <button
-            onClick={extractInsights}
-            className="bg-orange-600 p-4 rounded-xl hover:bg-orange-700"
-          >
-             Extract Insights
-          </button>
-
-          <button
-            onClick={getActionItems}
-            className="bg-yellow-600 px-4 py-2 rounded-xl hover:bg-yellow-700"
-          >
-            Extract Action Items
-          </button>
-
-          <button
-            onClick={getEntities}
-            className="bg-cyan-600 px-4 py-2 rounded-xl hover:bg-cyan-700"
-          >
-            Extract Entities
-          </button>
-
-          <button
-            onClick={getDeadlines}
-            className="bg-red-600 px-4 py-2 rounded-xl hover:bg-red-700"
-          >
-            Extract Deadlines
-          </button>
-        </div>
-
-        {/* Results */}
-        {summary && (
-          <div className="bg-slate-900 p-6 rounded-xl mb-6">
-            <h2 className="text-2xl font-bold mb-4">
-               Summary
-            </h2>
-            <p>{summary}</p>
+            <div className="results-grid">
+              <ResultPanel title="Summary" icon={FileText} content={summary} accentClass="accent--purple" />
+              <ResultPanel title="Quiz" icon={BookOpen} content={quiz} accentClass="accent--pink" />
+              <ResultPanel title="Insights" icon={Lightbulb} content={insights} accentClass="accent--orange" />
+              <ResultPanel title="Action items" icon={CheckSquare} content={actionItems} accentClass="accent--yellow" />
+              <ResultPanel title="Entities" icon={Tag} content={entities} accentClass="accent--cyan" />
+              <ResultPanel title="Deadlines" icon={Clock} content={deadlines} accentClass="accent--red" />
+            </div>
           </div>
         )}
 
-        {quiz && (
-          <div className="bg-slate-900 p-6 rounded-xl mb-6">
-            <h2 className="text-2xl font-bold mb-4">
-               Quiz
-            </h2>
-            <pre className="whitespace-pre-wrap">{quiz}</pre>
-          </div>
-        )}
-
-        {insights && (
-          <div className="bg-slate-900 p-6 rounded-xl mb-6">
-            <h2 className="text-2xl font-bold mb-4">
-               Insights
-            </h2>
-            <pre className="whitespace-pre-wrap">
-              {insights}
-            </pre>
-          </div>
-        )}
-
-        {comparison && (
-          <div className="bg-slate-900 p-6 rounded-xl mb-6">
-            <h2 className="text-2xl font-bold mb-4">
-              Document Comparison
-            </h2>
-
-            <pre className="whitespace-pre-wrap leading-8 text-gray-200">
-              {comparison}
-            </pre>
-          </div>
-        )}
-
-        {actionItems && (
-          <div className="bg-slate-900 p-6 rounded-xl mb-6">
-
-            <h2 className="text-xl font-bold mb-4">
-              Action Items
-            </h2>
-
-            <pre className="whitespace-pre-wrap">
-              {actionItems}
-            </pre>
-
-          </div>
-        )}
-
-        {entities && (
-          <div className="bg-slate-900 p-6 rounded-xl mb-6">
-
-            <h2 className="text-xl font-bold mb-4">
-              Entities
-            </h2>
-
-            <pre className="whitespace-pre-wrap">
-              {entities}
-            </pre>
-
-          </div>
-        )}
-
-        {deadlines && (
-          <div className="bg-slate-900 p-6 rounded-xl mb-6">
-
-            <h2 className="text-xl font-bold mb-4">
-              Deadlines & Important Dates
-            </h2>
-
-            <pre className="whitespace-pre-wrap">
-              {deadlines}
-            </pre>
-
-          </div>
-        )}
-
+        {/* ── Global loading overlay hint ── */}
         {loading && (
-          <h2 className="text-center text-2xl mt-8">
-             Processing...
-          </h2>
+          <div className="loading-bar">
+            <Loader2 size={14} className="spin" />
+            <span>Processing…</span>
+          </div>
         )}
 
+        <footer className="app-footer">
+          DocIntel · AI-powered document intelligence
+        </footer>
       </div>
-      <button
-  onClick={downloadSummary}
-  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded mb-4"
->
-  Download Summary PDF
-</button>
     </div>
   );
 }
