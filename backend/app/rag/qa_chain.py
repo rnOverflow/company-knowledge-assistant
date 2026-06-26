@@ -1,6 +1,7 @@
 import os
 from groq import Groq
 from dotenv import load_dotenv
+from backend.app.services.chat_memory import get_chat_history
 
 load_dotenv("backend/.env")
 
@@ -11,31 +12,39 @@ client = Groq(
 
 def generate_answer(question, context):
 
+
+
+    history = get_chat_history()
+
     prompt = f"""
-You are an AI assistant that answers questions using ONLY the provided context.
 
-Instructions:
+You are an enterprise knowledge assistant.
 
-- Use the context to answer the question clearly and completely.
+Previous Conversation:
 
-- If the context contains relevant information, answer in detail.
+{history}
 
-- Do not use outside knowledge.
-
-- If the answer truly does not exist in the context, say:
-
-  "I could not find this information in the uploaded document."
-  
-
-Context:
+Document Context:
 
 {context}
 
-Question:
+Current Question:
 
 {question}
 
-Detailed Answer:
+Answer based on both the conversation history
+
+and the document context.
+
+Use ONLY the provided document context.
+
+If the answer is not present in the document,
+
+say:
+
+"I could not find this information in the uploaded document."
+
+Provide a detailed answer when information is available.
 
 """
 
