@@ -22,6 +22,7 @@ function App() {
   const [actionItems, setActionItems] = useState("");
   const [entities, setEntities] = useState("");
   const [deadlines, setDeadlines] = useState("");
+  const [uploadedDocs, setUploadedDocs] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState("");
 
 const uploadFile = async () => {
@@ -41,8 +42,14 @@ const uploadFile = async () => {
         );
 
         alert(response.data.message);
-        if (files.length > 0) {
-          setSelectedDocument(files[0].name);
+        const names = Array.from(file).map(f => f.name);
+
+        setUploadedDocs(prev => [
+            ...new Set([...prev, ...names])
+        ]);
+
+        if (names.length > 0) {
+            setSelectedDocument(names[0]);
         }
 
     } catch (error) {
@@ -246,12 +253,31 @@ const getDeadlines = async () => {
             </p>
 
             <button
-    onClick={uploadFile}
-    disabled={loading}
->
-    {loading ? "Uploading..." : "Upload"}
-</button>
+                onClick={uploadFile}
+                disabled={loading}
+            >
+                {loading ? "Uploading..." : "Upload"}
+            </button>
           </div>
+
+          {uploadedDocs.length > 0 && (
+          <div className="mt-4 mb-4">
+            <label className="block mb-2 text-lg font-semibold">
+              Select Document
+            </label>
+            <select
+              value={selectedDocument}
+              onChange={(e) => setSelectedDocument(e.target.value)}
+              className="w-full p-3 rounded-lg bg-slate-800 border border-gray-600"
+            >
+              {uploadedDocs.map((doc, index) => (
+                <option key={index} value={doc}>
+                  {doc}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         </div>
 
         {/* Chat */}

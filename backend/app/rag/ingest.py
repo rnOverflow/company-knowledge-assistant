@@ -14,6 +14,9 @@ def ingest_document(file_path: str):
     loader = PyPDFLoader(file_path)
     documents = loader.load()
 
+    for doc in documents:
+        doc.metadata["source"] = os.path.basename(file_path)
+
     # Split into chunks
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
@@ -22,7 +25,10 @@ def ingest_document(file_path: str):
 
     chunks = text_splitter.split_documents(documents)
     for chunk in chunks:
-        chunk.metadata["source"] = os.path.basename(file_path)
+        if "page" in chunk.metadata:
+            chunk.metadata["page_number"] = (
+                chunk.metadata["page"] + 1
+            )
 
     # Clear previous Chroma database so only the latest uploaded document is indexed
     #if os.path.exists(CHROMA_PATH):
