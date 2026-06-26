@@ -14,6 +14,8 @@ from backend.app.rag.ingest import ingest_document
 from backend.app.rag.retriever import retrieve_documents
 from backend.app.rag.qa_chain import generate_answer
 
+from backend.app.services.document_comparison import compare_documents
+from backend.app.services.chat_memory import add_to_history
 from fastapi import APIRouter, UploadFile, File
 from pydantic import BaseModel
 import shutil
@@ -67,6 +69,11 @@ async def chat(request: QuestionRequest):
     )
 
     answer = generate_answer(request.question, docs)
+
+    add_to_history(
+    request.question,
+    answer
+)
 
     sources = []
 
@@ -139,6 +146,15 @@ async def insights():
 
     return {
         "insights": insights
+    }
+
+@router.get("/compare")
+async def compare(doc1: str, doc2: str):
+
+    result = compare_documents(doc1, doc2)
+
+    return {
+        "comparison": result
     }
 
 @router.get("/action-items")

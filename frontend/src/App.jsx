@@ -24,6 +24,9 @@ function App() {
   const [deadlines, setDeadlines] = useState("");
   const [uploadedDocs, setUploadedDocs] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState("");
+  const [compareDoc1, setCompareDoc1] = useState("");
+  const [compareDoc2, setCompareDoc2] = useState("");
+  const [comparison, setComparison] = useState("");
 
 const uploadFile = async () => {
 
@@ -204,6 +207,41 @@ const getDeadlines = async () => {
   }
 };
 
+const compareDocuments = async () => {
+
+  if (!compareDoc1 || !compareDoc2) {
+  alert("Please select both documents");
+  return;
+  }
+  
+  if (compareDoc1 === compareDoc2) {
+    alert("Please select two different documents");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const response = await axios.get(
+      "http://127.0.0.1:8000/compare",
+      {
+        params: {
+          doc1: compareDoc1,
+          doc2: compareDoc2
+        }
+      }
+    );
+
+    setComparison(response.data.comparison);
+
+  } catch (error) {
+    console.log(error);
+    alert("Failed to compare documents");
+  } finally {
+    setLoading(false);
+  }
+};
+
   const downloadSummary = () => {
 
   if (!summary) {
@@ -279,6 +317,62 @@ const getDeadlines = async () => {
           </div>
         )}
         </div>
+
+{/* Compare Documents */}
+
+{uploadedDocs.length >= 2 && (
+
+<div className="bg-slate-900 rounded-xl p-6 mb-6">
+
+  <h2 className="text-2xl font-bold mb-4">
+    Compare Documents
+  </h2>
+
+  <div className="grid grid-cols-2 gap-4 mb-4">
+
+    <select
+      value={compareDoc1}
+      onChange={(e) => setCompareDoc1(e.target.value)}
+      className="p-3 rounded-lg bg-slate-800"
+    >
+      <option value="">Select Document 1</option>
+
+      {uploadedDocs.map((doc, index) => (
+        <option key={index} value={doc}>
+          {doc}
+        </option>
+      ))}
+
+    </select>
+
+    <select
+      value={compareDoc2}
+      onChange={(e) => setCompareDoc2(e.target.value)}
+      className="p-3 rounded-lg bg-slate-800"
+    >
+      <option value="">Select Document 2</option>
+
+      {uploadedDocs.map((doc, index) => (
+        <option key={index} value={doc}>
+          {doc}
+        </option>
+      ))}
+
+    </select>
+
+  </div>
+
+  <button
+    onClick={compareDocuments}
+    disabled={!compareDoc1 || !compareDoc2}
+    className="bg-blue-600 px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+  >
+    Compare
+  </button>
+
+</div>
+
+)}
 
         {/* Chat */}
         <div className="bg-slate-900 rounded-xl p-6 mb-6 shadow-lg">
@@ -428,6 +522,18 @@ const getDeadlines = async () => {
             </h2>
             <pre className="whitespace-pre-wrap">
               {insights}
+            </pre>
+          </div>
+        )}
+
+        {comparison && (
+          <div className="bg-slate-900 p-6 rounded-xl mb-6">
+            <h2 className="text-2xl font-bold mb-4">
+              Document Comparison
+            </h2>
+
+            <pre className="whitespace-pre-wrap leading-8 text-gray-200">
+              {comparison}
             </pre>
           </div>
         )}
